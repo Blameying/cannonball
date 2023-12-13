@@ -63,8 +63,8 @@ use once_cell::sync::Lazy;
 use crate::{
     api::{
         qemu_info_t, qemu_plugin_cb_flags_QEMU_PLUGIN_CB_NO_REGS, qemu_plugin_id_t,
-        qemu_plugin_insn, qemu_plugin_mem_rw_QEMU_PLUGIN_MEM_R, qemu_plugin_meminfo_t,
-        qemu_plugin_register_atexit_cb, qemu_plugin_register_flush_cb,
+        qemu_plugin_insn, qemu_plugin_mem_rw, qemu_plugin_mem_rw_QEMU_PLUGIN_MEM_R,
+        qemu_plugin_meminfo_t, qemu_plugin_register_atexit_cb, qemu_plugin_register_flush_cb,
         qemu_plugin_register_vcpu_exit_cb, qemu_plugin_register_vcpu_idle_cb,
         qemu_plugin_register_vcpu_init_cb, qemu_plugin_register_vcpu_insn_exec_cb,
         qemu_plugin_register_vcpu_mem_cb, qemu_plugin_register_vcpu_resume_cb,
@@ -524,6 +524,19 @@ where
         data: T,
     ) -> Self {
         Self { cb, data }
+    }
+
+    pub fn register_rw(&self, insn: *mut qemu_plugin_insn, rw: qemu_plugin_mem_rw) {
+        let data = self.data.clone().into();
+        unsafe {
+            qemu_plugin_register_vcpu_mem_cb(
+                insn,
+                Some(self.cb),
+                qemu_plugin_cb_flags_QEMU_PLUGIN_CB_NO_REGS,
+                rw,
+                data,
+            );
+        };
     }
 }
 
